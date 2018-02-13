@@ -1,10 +1,13 @@
+sudo: required
 language: node_js
 node_js:
     - "4"
     - "5"
     - "6"
-addons:
-    postgresql: "9.4"
-before_script:
-    - psql -c 'create database brute_pg;' -U postgres
-    - psql -c "create table brute(id text primary key, count int, first_request timestamptz, last_request timestamptz, expires timestamptz);" brute_pg -U postgres
+services:
+    - docker
+
+before_install:
+docker pull microsoft/mssql-server-linux:2017-latest
+docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=p@s$w0rd' -p 1433:1433 -d microsoft/mssql-server-linux:2017-latest
+docker exec -it microsoft/mssql-server-linux:2017-latest /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P p@s$w0rd -Q "create database brutedb; go; create table brute(id nvarchar primary key, count int, first_request datetime, last_request datetime, expires datetime); go;"
