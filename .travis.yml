@@ -12,9 +12,9 @@ before_install:
     - sudo docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=p@s$w0rd' -e 'MSSQL_PID=Developer' -p 1400:1433 --name sql1 -d microsoft/mssql-server-linux:2017-latest
     - sudo docker ps -a
     - curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-    - curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+    - curl https://packages.microsoft.com/config/ubuntu/14.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
     - sudo apt-get update
+    - sudo ACCEPT_EULA=Y apt-get install unixodbc-dev
     - sudo ACCEPT_EULA=Y apt-get install msodbcsql
     - sudo ACCEPT_EULA=Y apt-get install mssql-tools
-    - sudo ACCEPT_EULA=Y apt-get install unixodbc-dev
     - /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1,1400 -U SA -P p@s$w0rd -Q "create database brutedb; "
