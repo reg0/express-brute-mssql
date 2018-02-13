@@ -9,6 +9,11 @@ services:
 
 before_install:
     - sudo docker pull microsoft/mssql-server-linux:2017-latest
-    - sudo docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=p@s$w0rd' -p 1433:1433 --name sql1 -d microsoft/mssql-server-linux:2017-latest
+    - sudo docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=p@s$w0rd' -e 'MSSQL_PID=Developer' -p 1400:1433 --name sql1 -d microsoft/mssql-server-linux:2017-latest
     - sudo docker ps -a
-    - sudo docker exec -it sql1 /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -U SA -P p@s$w0rd -Q "create database brutedb; \n go \n create table brute(id nvarchar primary key, count int, first_request datetime, last_request datetime, expires datetime); \n go"
+    - sudo docker exec -it sql1 /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1,1433 -U SA -P p@s$w0rd -Q "create database brutedb; \n go \n create table brute(id nvarchar primary key, count int, first_request datetime, last_request datetime, expires datetime); \n go"
+    - curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+    - curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+    - sudo apt-get update
+    - sudo apt-get install mssql-tools unixodbc-dev
+    - /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1,1400 -U SA -P p@s$w0rd -Q "create database brutedb; \n go \n create table brute(id nvarchar primary key, count int, first_request datetime, last_request datetime, expires datetime); \n go"
