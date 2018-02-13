@@ -11,4 +11,4 @@ before_install:
     - sudo docker pull microsoft/mssql-server-linux:2017-latest
     - sudo docker run -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=p@s$w0rd' -p 1433:1433 --name sql1 -d microsoft/mssql-server-linux:2017-latest
     - sudo docker ps -a
-    - sudo docker exec -it sql1 /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -U sa -P p@s$w0rd -Q "create database brutedb; \n go \n create table brute(id nvarchar primary key, count int, first_request datetime, last_request datetime, expires datetime); \n go"
+    - sudo docker exec -it sql1 /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -U SA -P p@s$w0rd -Q "create database brutedb; \n go \n create table brute(id nvarchar primary key, count int, first_request datetime, last_request datetime, expires datetime); \n go"
