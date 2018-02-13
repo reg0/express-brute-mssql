@@ -14,5 +14,7 @@ before_install:
     - curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
     - curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
     - sudo apt-get update
-    - sudo apt-get install mssql-tools unixodbc-dev
+    - sudo ACCEPT_EULA=Y apt-get install msodbcsql
+    - sudo ACCEPT_EULA=Y apt-get install mssql-tools
+    - sudo ACCEPT_EULA=Y apt-get install unixodbc-dev
     - /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1,1400 -U SA -P p@s$w0rd -Q "create database brutedb; "
