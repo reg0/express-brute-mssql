@@ -2,101 +2,151 @@ var AbstractClientStore = require('express-brute/lib/AbstractClientStore'),
 	humps = require('humps'),
 	moment = require('moment'),
 	util = require('util'),
-	_ = require('lodash');
+	_ = require('lodash'),
+	sql = require('mssql');
 
-var PgStore = module.exports = function (options) {
+var MsSqlStoreFieldMapping = {
+	"count": "count",
+	"first_request": "firstRequest",
+	"last_request": "lastRequest",
+	"id": "id",
+	"expires": "expires"	
+}
+
+var MsSqlStore = module.exports = function (options) {
 	AbstractClientStore.apply(this, arguments);
 
-	this.options = _.extend({}, PgStore.defaults, options);
-    this.pool = options.pool || new (require('pg')).Pool(this.options);
+	this.options = _.extend({}, MsSqlStore.defaults, options);
+	this.pool = options.pool;
+	
+	this.getPool = function() {
+		if (this.pool) {
+			return Promise.resolve(this.pool);
+		}
+
+		return new sql.ConnectionPool(this.options).connect();
+	}
+
+	this.mapResult = function(record) {
+		return Object.keys(record).reduce(function(result, key){
+			result[MsSqlStoreFieldMapping[key]] = record[key];
+			return result;
+		}, {})
+	}
 };
 
-PgStore.prototype = Object.create(AbstractClientStore.prototype);
+MsSqlStore.prototype = Object.create(AbstractClientStore.prototype);
 
-PgStore.prototype.set = function (key, value, lifetime, callback) {
+MsSqlStore.prototype.set = function (key, value, lifetime, callback) {
 	var self = this;
 
-	this.pool.connect(function (err, client, done) {
-		if (err) { return typeof callback === 'function' && callback(err); }
-
+	return this.getPool().then(function(con) {
 		var expiry;
 
-		if (lifetime) { expiry = moment().add(lifetime, 'seconds').toDate(); }
+		if (lifetime) { 
+			expiry = moment().add(lifetime, 'seconds').toDate(); 
+		}
 
-		client.query({
-			text: util.format('UPDATE "%s"."%s" SET "count" = $1, "last_request" = $2, "expires" = $3 WHERE "id" = $4', self.options.schemaName, self.options.tableName),
-			values: [value.count, value.lastRequest, expiry, key],
-			name: "brute-update"
-		}, function (err, result) {
-			if (!err && !result.rowCount) {
-				return client.query({
-					text: util.format('INSERT INTO "%s"."%s" ("id", "count", "first_request", "last_request", "expires") VALUES ($1, $2, $3, $4, $5)', self.options.schemaName, self.options.tableName),
-					values: [key, value.count, value.firstRequest, value.lastRequest, expiry],
-					name: "brute-insert"
-				}, function (err, result) {
-					done();
+		var requestUpdate = new sql.Request(con)
+			.input("count", value.count)
+			.input("lastRequest", value.lastRequest)
+			.input("expires", expiry)
+			.input("id", key);
 
-					return typeof callback === 'function' && callback(err);
+		return requestUpdate.query(
+			'UPDATE ' + (self.options.schemaName ? '[' + self.options.schemaName + '].' : '') + '[' + self.options.tableName + '] '+
+			'SET count = @count, last_request = @lastRequest, expires = @expires WHERE id = @id'
+		).then(function(result) {
+			if (!result.rowsAffected[0]) {
+				var requestInsert = new sql.Request(con)
+					.input("count", value.count)
+					.input("firstRequest", value.firstRequest)
+					.input("lastRequest", value.lastRequest)
+					.input("expires", expiry)
+					.input("id", key);
+
+				return requestInsert.query(
+					'INSERT INTO ' + (self.options.schemaName ? '[' + self.options.schemaName + '].' : '') + '[' + self.options.tableName + '] '+
+					'(id, count, first_request, last_request, expires)' +
+					'VALUES (@id, @count, @firstRequest, @lastRequest, @expires)'
+				).then(function(result) {
+					return typeof callback === 'function' && callback(null);	
 				});
+			} else {
+				return typeof callback === 'function' && callback(null);
 			}
-
-			done();
-
-			return typeof callback === 'function' && callback(err);
 		});
+	}).catch(function(error) {
+		return typeof callback === 'function' && callback(error);
+	}).then(function() {
+		sql.close();
 	});
 };
 
-PgStore.prototype.get = function (key, callback) {
+MsSqlStore.prototype.get = function (key, callback) {
 	var self = this;
-
-	this.pool.connect(function (err, client, done) {
-		if (err) { return typeof callback === 'function' && callback(err); }
+	
+	return this.getPool().then(function(con) {
+		var query = 'SELECT id, count, first_request, last_request, expires FROM ' + 
+		(self.options.schemaName ? '[' + self.options.schemaName + '].' : '') + '[' + self.options.tableName + ']' + 
+		' WHERE id = @id';
+		var request = new sql.Request(con).input("id", key);
+		return request.query(query).then(function(result) {
+			return typeof callback === 'function' && callback(null, result.rowsAffected[0] ? self.mapResult(result.recordset[0]) : null);
+		});
+	}).catch(function(error) {
+		return typeof callback === 'function' && callback(error);
+	}).then(function() {
+		sql.close();
+	});
+/*
+	this.pool.connect(function (error, client, done) {
+		if (error) { return typeof callback === 'function' && callback(error); }
 
 		client.query({
-			text: util.format('SELECT "id", "count", "first_request", "last_request", "expires" FROM "%s"."%s" WHERE "id" = $1', self.options.schemaName, self.options.tableName),
+			text: util.format(, self.options.schemaName, self.options.tableName),
 			values: [key],
 			name: "brute-select"
-		}, function (err, result) {
-			if (!err && result.rows.length && new Date(result.rows[0].expires).getTime() < new Date().getTime()) {
+		}, function (error, result) {
+			if (!error && result.rows.length && new Date(result.rows[0].expires).getTime() < new Date().getTime()) {
 				return client.query({
 					text: util.format('DELETE FROM "%s"."%s" WHERE "id" = $1', self.options.schemaName, self.options.tableName),
 					values: [key],
 					name: "brute-delete"
-				}, function (err) {
+				}, function (error) {
 					done();
 
-					return typeof callback === 'function' && callback(err, null);
+					return typeof callback === 'function' && callback(error, null);
 				});
 			}
 
 			done();
 
-			return typeof callback === 'function' && callback(err, result.rowCount ? humps.camelizeKeys(result.rows[0]) : null);
+			return typeof callback === 'function' && callback(error, result.rowCount ? humps.camelizeKeys(result.rows[0]) : null);
 		});
 	});
+	*/
 };
 
-PgStore.prototype.reset = function (key, callback) {
+MsSqlStore.prototype.reset = function (key, callback) {
 	var self = this;
 
-	this.pool.connect(function (err, client, done) {
-		if (err) { return typeof callback === 'function' && callback(err); }
-
-		return client.query({
-			text: util.format('DELETE FROM "%s"."%s" WHERE "id" = $1 RETURNING *', self.options.schemaName, self.options.tableName),
-			values: [key],
-			name: "brute-delete"
-		}, function (err, result) {
-			done();
-
-			return typeof callback === 'function' && callback(err, result.rowCount ? humps.camelizeKeys(result.rows[0]) : null);
+	return this.getPool().then(function(con) {
+		var requestDelete = new sql.Request(con).input("id", key);
+		return requestDelete.query(
+			'DELETE FROM ' + (self.options.schemaName ? '[' + self.options.schemaName + '].' : '') + '[' + self.options.tableName + '] '+
+			'WHERE id = @id'
+		).then(function(result) {
+			return typeof callback === 'function' && callback(null);
 		});
+	}).catch(function(error) {
+		return typeof callback === 'function' && callback(error);			
+		sql.close();
 	});
 };
 
-PgStore.defaults = {
-	host: '127.0.0.1',
+MsSqlStore.defaults = {
+	server: '127.0.0.1',
 	schemaName: 'public',
 	tableName: 'brute'
 };
