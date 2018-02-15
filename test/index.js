@@ -1,13 +1,15 @@
 var assert = require('chai').assert;
-var PgStore = require('../');
+var MsSqlStore = require('../');
 
-describe('express-brute Postgres store', function () {
+describe('express-brute MS Sql Server store', function () {
 	var instance;
 
 	beforeEach(function () {
-		instance = new PgStore({
-			database: 'brute_pg',
-			username: 'postgres'
+		instance = new MsSqlStore({
+			tableName: 'brute',
+			database: 'brutedb',
+			user: 'sa',
+			password: 'p@s$w0rd'
 		});
 	});
 
