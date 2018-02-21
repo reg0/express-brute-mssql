@@ -8,6 +8,7 @@ describe('express-brute MS Sql Server store', function () {
 		instance = new MsSqlStore({
 			tableName: 'brute',
 			database: 'brutedb',
+			schemaName: 'bruteschema',
 			user: 'sa',
 			password: 'p@s$w0rd'
 		});
