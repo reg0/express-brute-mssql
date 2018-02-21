@@ -10,7 +10,7 @@ describe('express-brute MS Sql Server store', function () {
 			database: 'brutedb',
 			schemaName: 'bruteschema',
 			user: 'sa',
-			password: 'p@s$w0rd'
+			password: 'P@s$w0rd'
 		});
 	});
 
