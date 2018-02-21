@@ -33,6 +33,10 @@ var MsSqlStore = module.exports = function (options) {
 			return result;
 		}, {})
 	}
+
+	this.tableName = function(options) {
+		return (options.schemaName ? '[' + options.schemaName + '].' : '') + '[' + options.tableName + ']';
+	}
 };
 
 MsSqlStore.prototype = Object.create(AbstractClientStore.prototype);
@@ -54,8 +58,8 @@ MsSqlStore.prototype.set = function (key, value, lifetime, callback) {
 			.input("id", key);
 
 		return requestUpdate.query(
-			'UPDATE ' + (self.options.schemaName ? '[' + self.options.schemaName + '].' : '') + '[' + self.options.tableName + '] '+
-			'SET count = @count, last_request = @lastRequest, expires = @expires WHERE id = @id'
+			'UPDATE ' + self.tableName(self.options) +
+			' SET count = @count, last_request = @lastRequest, expires = @expires WHERE id = @id'
 		).then(function(result) {
 			if (!result.rowsAffected[0]) {
 				var requestInsert = new sql.Request(con)
@@ -66,8 +70,8 @@ MsSqlStore.prototype.set = function (key, value, lifetime, callback) {
 					.input("id", key);
 
 				return requestInsert.query(
-					'INSERT INTO ' + (self.options.schemaName ? '[' + self.options.schemaName + '].' : '') + '[' + self.options.tableName + '] '+
-					'(id, count, first_request, last_request, expires)' +
+					'INSERT INTO ' + self.tableName(self.options) +
+					'(id, count, first_request, last_request, expires) ' +
 					'VALUES (@id, @count, @firstRequest, @lastRequest, @expires)'
 				).then(function(result) {
 					return typeof callback === 'function' && callback(null);	
@@ -92,40 +96,23 @@ MsSqlStore.prototype.get = function (key, callback) {
 		' WHERE id = @id';
 		var request = new sql.Request(con).input("id", key);
 		return request.query(query).then(function(result) {
-			return typeof callback === 'function' && callback(null, result.rowsAffected[0] ? self.mapResult(result.recordset[0]) : null);
+			if (result.rowsAffected[0] && new Date(result.recordset[0].expires).getTime() < new Date().getTime()) {
+				var queryDelete = 'DELETE FROM ' + self.tableName(self.options) + ' WHERE id = @id';
+				var requestDelete = new sql.Request(con).input("id", key);
+				return requestDelete.query(queryDelete).then(function(result) {
+					return typeof callback === 'function' && callback(null, null);
+				});
+			} else if (result.rowsAffected[0]) {
+				return typeof callback === 'function' && callback(null, result.rowsAffected[0] ? self.mapResult(result.recordset[0]) : null);
+			} else {
+				return typeof callback === 'function' && callback(null, null);
+			}
 		});
 	}).catch(function(error) {
 		return typeof callback === 'function' && callback(error);
 	}).then(function() {
 		sql.close();
 	});
-/*
-	this.pool.connect(function (error, client, done) {
-		if (error) { return typeof callback === 'function' && callback(error); }
-
-		client.query({
-			text: util.format(, self.options.schemaName, self.options.tableName),
-			values: [key],
-			name: "brute-select"
-		}, function (error, result) {
-			if (!error && result.rows.length && new Date(result.rows[0].expires).getTime() < new Date().getTime()) {
-				return client.query({
-					text: util.format('DELETE FROM "%s"."%s" WHERE "id" = $1', self.options.schemaName, self.options.tableName),
-					values: [key],
-					name: "brute-delete"
-				}, function (error) {
-					done();
-
-					return typeof callback === 'function' && callback(error, null);
-				});
-			}
-
-			done();
-
-			return typeof callback === 'function' && callback(error, result.rowCount ? humps.camelizeKeys(result.rows[0]) : null);
-		});
-	});
-	*/
 };
 
 MsSqlStore.prototype.reset = function (key, callback) {
@@ -134,10 +121,9 @@ MsSqlStore.prototype.reset = function (key, callback) {
 	return this.getPool().then(function(con) {
 		var requestDelete = new sql.Request(con).input("id", key);
 		return requestDelete.query(
-			'DELETE FROM ' + (self.options.schemaName ? '[' + self.options.schemaName + '].' : '') + '[' + self.options.tableName + '] '+
-			'WHERE id = @id'
+			'DELETE FROM ' + self.tableName(self.options) + ' OUTPUT DELETED.* WHERE id = @id'
 		).then(function(result) {
-			return typeof callback === 'function' && callback(null);
+			return typeof callback === 'function' && callback(null, result.recordset && result.recordset.length ? self.mapResult(result.recordset[0]) : null);
 		});
 	}).catch(function(error) {
 		return typeof callback === 'function' && callback(error);			

@@ -32,8 +32,8 @@ describe('express-brute MS Sql Server store', function () {
 			instance.get('1.2.3.4', function (err, result) {
 				assert.isNull(err);
 				assert.equal(result.count, object.count);
-				assert.equal(result.firstRequest.getTime(), object.firstRequest.getTime());
-				assert.equal(result.lastRequest.getTime(), object.lastRequest.getTime());
+				assert(Math.abs(result.firstRequest.getTime() - object.firstRequest.getTime()) < 5);
+				assert(Math.abs(result.lastRequest.getTime() - object.lastRequest.getTime()) < 5);
 
 				done();
 			});
@@ -56,8 +56,8 @@ describe('express-brute MS Sql Server store', function () {
 					object.count++;
 
 					assert.equal(result.count, object.count);
-					assert.equal(result.firstRequest.getTime(), object.firstRequest.getTime());
-					assert.notEqual(result.lastRequest.getTime(), object.lastRequest.getTime());
+					assert(Math.abs(result.firstRequest.getTime() - object.firstRequest.getTime()) < 5);
+					assert(Math.abs(result.lastRequest.getTime() - object.lastRequest.getTime()) > 5);
 
 					done();
 				});
@@ -100,8 +100,8 @@ describe('express-brute MS Sql Server store', function () {
 				assert.isNull(err);
 
 				assert.equal(result.count, object.count);
-				assert.equal(result.firstRequest.getTime(), object.firstRequest.getTime());
-				assert.equal(result.lastRequest.getTime(), object.lastRequest.getTime());
+				assert(Math.abs(result.firstRequest.getTime() - object.firstRequest.getTime()) < 5);
+				assert(Math.abs(result.lastRequest.getTime() - object.lastRequest.getTime()) < 5);
 
 				instance.get('1.2.3.4', function (err, result) {
 					assert.isNull(err);
@@ -125,8 +125,8 @@ describe('express-brute MS Sql Server store', function () {
 				instance.get('1.2.3.4', function (err, result) {
 					assert.isNull(err);
 					assert.equal(result.count, object.count);
-					assert.equal(result.firstRequest.getTime(), object.firstRequest.getTime());
-					assert.equal(result.lastRequest.getTime(), object.lastRequest.getTime());
+					assert(Math.abs(result.firstRequest.getTime() - object.firstRequest.getTime()) < 5);
+					assert(Math.abs(result.lastRequest.getTime() - object.lastRequest.getTime()) < 5);
 
 					setTimeout(function () {
 						// get after 1 sec, should have expired
