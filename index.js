@@ -147,6 +147,6 @@ MsSqlStore.prototype.reset = function (key, callback) {
 
 MsSqlStore.defaults = {
 	server: '127.0.0.1',
-	schemaName: 'public',
+	schemaName: 'dbo',
 	tableName: 'brute'
 };
