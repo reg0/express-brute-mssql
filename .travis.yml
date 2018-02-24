@@ -8,16 +8,11 @@ services:
     - docker
 
 before_install:
-    - sudo curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-    - sudo curl https://packages.microsoft.com/config/ubuntu/14.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
-    - exit
+    - sudo wget -O- -q https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+    - sudo wget -q https://packages.microsoft.com/config/ubuntu/14.04/prod.list -O /etc/apt/sources.list.d/mssql-release.list
     - sudo apt-get update
     - sudo ACCEPT_EULA=Y apt-get install msodbcsql
     - sudo ACCEPT_EULA=Y apt-get install mssql-tools
-    - echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile
-    - echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
-    - source ~/.bashrc
-    - sudo apt-get install unixodbc-dev
     - sudo docker pull microsoft/mssql-server-linux:2017-latest
     - sudo docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=P@s$w0rd' -e 'MSSQL_PID=Developer' -p 1400:1433 --name sql1 -d microsoft/mssql-server-linux:2017-latest
     - sudo docker ps -a
