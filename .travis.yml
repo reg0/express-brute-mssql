@@ -8,8 +8,18 @@ services:
     - docker
 
 before_install:
+    - sudo curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+    - sudo curl https://packages.microsoft.com/config/ubuntu/14.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+    - exit
+    - sudo apt-get update
+    - sudo ACCEPT_EULA=Y apt-get install msodbcsql
+    - sudo ACCEPT_EULA=Y apt-get install mssql-tools
+    - echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile
+    - echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
+    - source ~/.bashrc
+    - sudo apt-get install unixodbc-dev
     - sudo docker pull microsoft/mssql-server-linux:2017-latest
-    - sudo docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=P@s$w0rd' -e 'MSSQL_PID=Developer' -p 1433:1433 --name sql1 -d microsoft/mssql-server-linux:2017-latest
+    - sudo docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=P@s$w0rd' -e 'MSSQL_PID=Developer' -p 1400:1433 --name sql1 -d microsoft/mssql-server-linux:2017-latest
     - sudo docker ps -a
     - sudo docker exec -it sql1 bash -c "echo -e 'create database brutedb;\ngo\nuse brutedb;\ngo\ncreate schema bruteschema;\ngo\ncreate table bruteschema.brute(id nvarchar(255) primary key, count int, first_request datetime2, last_request datetime2, expires datetime2);\ngo' > script.sql"
-    - sudo docker exec -it sql1 /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -U sa -P 'P@s$w0rd' -d brutedb -i script.sql
+    - /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1,1400 -U sa -P 'P@s$w0rd' -d brutedb -i script.sql
