@@ -1,4 +1,4 @@
-express-brute-pg
+express-brute-mssql WORK IN PROGRESS
 ===================
 
 [![Build Status](https://travis-ci.org/reg0/express-brute-mssql.svg?branch=master)](https://travis-ci.org/reg0/express-brute-mssql)
