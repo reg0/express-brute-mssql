@@ -1,6 +1,10 @@
 var assert = require('chai').assert;
 var MsSqlStore = require('../');
 
+const datesEqual = function(date1, date2) {
+	return Math.abs(date1.getTime() - date2.getTime()) < 5; // due to limitation of mssql date types, strict comparison doesn't work :|
+}
+
 describe('express-brute MS Sql Server store', function () {
 	var instance;
 
@@ -32,8 +36,8 @@ describe('express-brute MS Sql Server store', function () {
 			instance.get('1.2.3.4', function (err, result) {
 				assert.isNull(err);
 				assert.equal(result.count, object.count);
-				assert(Math.abs(result.firstRequest.getTime() - object.firstRequest.getTime()) < 5);
-				assert(Math.abs(result.lastRequest.getTime() - object.lastRequest.getTime()) < 5);
+				assert(datesEqual(result.firstRequest, object.firstRequest));
+				assert(datesEqual(result.lastRequest, object.lastRequest));
 
 				done();
 			});
@@ -56,8 +60,8 @@ describe('express-brute MS Sql Server store', function () {
 					object.count++;
 
 					assert.equal(result.count, object.count);
-					assert(Math.abs(result.firstRequest.getTime() - object.firstRequest.getTime()) < 5);
-					assert(Math.abs(result.lastRequest.getTime() - object.lastRequest.getTime()) > 5);
+					assert(datesEqual(result.firstRequest, object.firstRequest));
+					assert(datesEqual(result.lastRequest, object.lastRequest));
 
 					done();
 				});
@@ -100,8 +104,8 @@ describe('express-brute MS Sql Server store', function () {
 				assert.isNull(err);
 
 				assert.equal(result.count, object.count);
-				assert(Math.abs(result.firstRequest.getTime() - object.firstRequest.getTime()) < 5);
-				assert(Math.abs(result.lastRequest.getTime() - object.lastRequest.getTime()) < 5);
+				assert(datesEqual(result.firstRequest, object.firstRequest));
+				assert(datesEqual(result.lastRequest, object.lastRequest));
 
 				instance.get('1.2.3.4', function (err, result) {
 					assert.isNull(err);
@@ -125,8 +129,8 @@ describe('express-brute MS Sql Server store', function () {
 				instance.get('1.2.3.4', function (err, result) {
 					assert.isNull(err);
 					assert.equal(result.count, object.count);
-					assert(Math.abs(result.firstRequest.getTime() - object.firstRequest.getTime()) < 5);
-					assert(Math.abs(result.lastRequest.getTime() - object.lastRequest.getTime()) < 5);
+					assert(datesEqual(result.firstRequest, object.firstRequest));
+					assert(datesEqual(result.lastRequest, object.lastRequest));
 
 					setTimeout(function () {
 						// get after 1 sec, should have expired
