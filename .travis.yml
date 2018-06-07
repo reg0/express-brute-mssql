@@ -12,4 +12,4 @@ before_install:
     - sudo docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=Passw0rd' -e 'MSSQL_PID=Developer' --network host -p 1433:1433 --name sql1 -d microsoft/mssql-server-linux:2017-GDR
     - sudo docker exec -it sql1 bash -c "echo -e 'create database brutedb;\ngo\nuse brutedb;\ngo\ncreate schema bruteschema;\ngo\ncreate table bruteschema.brute(id nvarchar(255) primary key, count int, first_request datetime2, last_request datetime2, expires datetime2);\ngo' > script.sql"
     - echo -e '#!'"/usr/bin/env bash\n\nsleep 10\n\nimport_data() {\n    /opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -U sa -P 'Passw0rd' -i script.sql\n}\n\nimport_data || (sleep 5 && import_data)" > script.sh
-    - sudo docker exec -it sql1 bash -s < script.sh
+    - sudo docker exec -i sql1 bash -s < script.sh
