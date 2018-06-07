@@ -36,8 +36,8 @@ describe('express-brute MS Sql Server store', function () {
 			instance.get('1.2.3.4', function (err, result) {
 				assert.isNull(err);
 				assert.equal(result.count, object.count);
-				assert(datesEqual(result.firstRequest, object.firstRequest));
-				assert(datesEqual(result.lastRequest, object.lastRequest));
+				assert.isOk(datesEqual(result.firstRequest, object.firstRequest));
+				assert.isOk(datesEqual(result.lastRequest, object.lastRequest));
 
 				done();
 			});
@@ -60,8 +60,8 @@ describe('express-brute MS Sql Server store', function () {
 					object.count++;
 
 					assert.equal(result.count, object.count);
-					assert(datesEqual(result.firstRequest, object.firstRequest));
-					assert(datesEqual(result.lastRequest, object.lastRequest));
+					assert.isOk(datesEqual(result.firstRequest, object.firstRequest));
+					assert.isNotOk(datesEqual(result.lastRequest, object.lastRequest));
 
 					done();
 				});
@@ -104,8 +104,8 @@ describe('express-brute MS Sql Server store', function () {
 				assert.isNull(err);
 
 				assert.equal(result.count, object.count);
-				assert(datesEqual(result.firstRequest, object.firstRequest));
-				assert(datesEqual(result.lastRequest, object.lastRequest));
+				assert.isOk(datesEqual(result.firstRequest, object.firstRequest));
+				assert.isOk(datesEqual(result.lastRequest, object.lastRequest));
 
 				instance.get('1.2.3.4', function (err, result) {
 					assert.isNull(err);
@@ -129,8 +129,8 @@ describe('express-brute MS Sql Server store', function () {
 				instance.get('1.2.3.4', function (err, result) {
 					assert.isNull(err);
 					assert.equal(result.count, object.count);
-					assert(datesEqual(result.firstRequest, object.firstRequest));
-					assert(datesEqual(result.lastRequest, object.lastRequest));
+					assert.isOk(datesEqual(result.firstRequest, object.firstRequest));
+					assert.isOk(datesEqual(result.lastRequest, object.lastRequest));
 
 					setTimeout(function () {
 						// get after 1 sec, should have expired
