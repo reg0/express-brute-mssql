@@ -16,7 +16,7 @@ var MsSqlStoreFieldMapping = {
 var MsSqlStore = module.exports = function (options) {
 	AbstractClientStore.apply(this, arguments);
 
-	this.options = _.extend({}, MsSqlStore.defaults, options);
+	this.options = _.extend({}, MsSqlStore.defaults, options, options.host ? {server: options.host} : {});
 	this.pool = options.pool;
 	
 	this.getPool = function() {
@@ -59,7 +59,8 @@ MsSqlStore.prototype.set = function (key, value, lifetime, callback) {
 
 		return requestUpdate.query(
 			'UPDATE ' + self.tableName(self.options) +
-			' SET count = @count, last_request = @lastRequest, expires = @expires WHERE id = @id'
+			' SET count = @count, last_request = @lastRequest, expires = @expires' + 
+			' WHERE id = @id'
 		).then(function(result) {
 			if (!result.rowsAffected[0]) {
 				var requestInsert = new sql.Request(con)
@@ -91,8 +92,8 @@ MsSqlStore.prototype.get = function (key, callback) {
 	var self = this;
 	
 	return this.getPool().then(function(con) {
-		var query = 'SELECT id, count, first_request, last_request, expires FROM ' + 
-		(self.options.schemaName ? '[' + self.options.schemaName + '].' : '') + '[' + self.options.tableName + ']' + 
+		var query = 'SELECT id, count, first_request, last_request, expires' + 
+		' FROM ' + self.tableName(self.options) + 
 		' WHERE id = @id';
 		var request = new sql.Request(con).input("id", key);
 		return request.query(query).then(function(result) {
