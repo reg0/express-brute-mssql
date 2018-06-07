@@ -13,7 +13,7 @@ var MsSqlStoreFieldMapping = {
 	"expires": "expires"	
 }
 
-var MsSqlStore = module.exports = function (options) {
+var MsSqlStore = function (options) {
 	AbstractClientStore.apply(this, arguments);
 
 	this.options = _.extend({}, MsSqlStore.defaults, options, options.host ? {server: options.host} : {});
@@ -137,3 +137,5 @@ MsSqlStore.defaults = {
 	schemaName: 'dbo',
 	tableName: 'brute'
 };
+
+module.exports = MsSqlStore;
