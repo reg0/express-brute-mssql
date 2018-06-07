@@ -1,23 +1,21 @@
 {
-  "name": "express-brute-pg",
-  "version": "1.0.2",
-  "description": "A PostgreSQL store for express-brute",
+  "name": "express-brute-mssql",
+  "version": "1.0.0",
+  "description": "A MS SQL Server store for express-brute",
   "keywords": [
     "express",
     "brute",
-    "postgres",
-    "postgresql",
-    "pg"
+    "mssql"
   ],
   "license": "MIT",
   "private": false,
   "repository": {
     "type": "git",
-    "url": "git@github.com:dmfay/express-brute-pg.git"
+    "url": "git@github.com:reg0/express-brute-mssql.git"
   },
   "author": {
-    "name": "Dian M Fay",
-    "email": "dian.m.fay@gmail.com"
+    "name": "Kamil Mikolajczyk",
+    "email": "k4mil.mikolajczyk+expressbrutemssql@gmail.com"
   },
   "scripts": {
     "test": "mocha"
